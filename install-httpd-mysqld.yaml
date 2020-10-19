@@ -1,0 +1,23 @@
+---
+- host: httpd
+  become: True
+  tasks:
+  - name: Install packages httpd - mysqld
+    yum:
+      name: "{{item}}"
+      state: latest
+    with_items:
+    - httpd
+    - mysqld
+
+
+---
+- host: httpd
+  become: True
+  tasks:
+  - name: Install httpd
+    yum:
+      name: ['httpd','php']
+      state: latest
+  - name: Install mysqld
+    command: 
