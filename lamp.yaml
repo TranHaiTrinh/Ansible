@@ -1,0 +1,23 @@
+---
+- hosts: httpd
+  become: True
+  tasks:
+  - name: Install packages httpd - php
+    yum:
+      name: ['wget', 'httpd', 'php']
+      state: latest
+
+
+
+- hosts: mysql
+  tasks:
+  - name: Install mysqld
+    command: "{{item}}"
+    with_items:
+    - yum install wget -y
+    - sudo wget https://repo.mysql.com//mysql80-community-release-el7-3.noarch.rpm
+    - rpm -ivh mysql80-community-release-el7-3.noarch.rpm
+    - yum install mysql-server -y
+    - systemctl start mysqld
+    - sudo systemctl enable mysqld
+    - sudo grep 'temporary password' /var/log/mysqld.log
