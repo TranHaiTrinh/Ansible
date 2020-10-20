@@ -1,0 +1,107 @@
+# ----- Examples ------ #
+- name: Create a new database with name 'bobdata'
+  community.mysql.mysql_db:
+    name: bobdata
+    state: present
+
+- name: Create new databases with names 'foo' and 'bar'
+  community.mysql.mysql_db:
+    name:
+      - foo
+      - bar
+    state: present
+
+# Copy database dump file to remote host and restore it to database 'my_db'
+- name: Copy database dump file
+  copy:
+    src: dump.sql.bz2
+    dest: /tmp
+
+- name: Restore database
+  community.mysql.mysql_db:
+    name: my_db
+    state: import
+    target: /tmp/dump.sql.bz2
+
+- name: Restore database ignoring errors
+  community.mysql.mysql_db:
+    name: my_db
+    state: import
+    target: /tmp/dump.sql.bz2
+    force: yes
+
+- name: Dump multiple databases
+  community.mysql.mysql_db:
+    state: dump
+    name: db_1,db_2
+    target: /tmp/dump.sql
+
+- name: Dump multiple databases
+  community.mysql.mysql_db:
+    state: dump
+    name:
+      - db_1
+      - db_2
+    target: /tmp/dump.sql
+
+- name: Dump all databases to hostname.sql
+  community.mysql.mysql_db:
+    state: dump
+    name: all
+    target: /tmp/dump.sql
+
+- name: Dump all databases to hostname.sql including master data
+  community.mysql.mysql_db:
+    state: dump
+    name: all
+    target: /tmp/dump.sql
+    master_data: 1
+
+# Import of sql script with encoding option
+- name: >
+    Import dump.sql with specific latin1 encoding,
+    similar to mysql -u <username> --default-character-set=latin1 -p <password> < dump.sql
+  community.mysql.mysql_db:
+    state: import
+    name: all
+    encoding: latin1
+    target: /tmp/dump.sql
+
+# Dump of database with encoding option
+- name: >
+    Dump of Databse with specific latin1 encoding,
+    similar to mysqldump -u <username> --default-character-set=latin1 -p <password> <database>
+  community.mysql.mysql_db:
+    state: dump
+    name: db_1
+    encoding: latin1
+    target: /tmp/dump.sql
+
+- name: Delete database with name 'bobdata'
+  community.mysql.mysql_db:
+    name: bobdata
+    state: absent
+
+- name: Make sure there is neither a database with name 'foo', nor one with name 'bar'
+  community.mysql.mysql_db:
+    name:
+      - foo
+      - bar
+    state: absent
+
+# Dump database with argument not directly supported by this module
+# using dump_extra_args parameter
+- name: Dump databases without including triggers
+  community.mysql.mysql_db:
+    state: dump
+    name: foo
+    target: /tmp/dump.sql
+    dump_extra_args: --skip-triggers
+
+- name: Try to create database as root/nopassword first. If not allowed, pass the credentials
+  community.mysql.mysql_db:
+    check_implicit_admin: yes
+    login_user: bob
+    login_password: 123456
+    name: bobdata
+    state: present

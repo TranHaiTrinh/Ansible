@@ -1,0 +1,46 @@
+- name: Check if Mysql is installed
+  hosts: mysql-01
+  become: True
+  tasks:
+  - name: Check if Mysql is installed
+    register: mysql_installed
+    command: mysql --version
+    ignore_errors: true
+
+  - name: This task is only executed if Mysql is installed
+    debug: msg='mysql is installed'
+    when: mysql_installed is success
+
+  - name: This task is only executed if Mysql is NOT installed
+    debug: msg='mysql is NOT installed'
+    when: mysql_installed is failed
+
+
+- hosts: mysql-01
+  become: True
+  tasks:
+  - name: Check if HTTPD is installed
+    register: http_installed
+    command: httpd -v
+    ignore_errors: true
+
+  - name: HTTPD is installed
+    debug: 
+      msg='HTTPD is installed'
+    when: http_installed is success
+    # when: http_installed is failed
+    # when: http_installed is skipped
+
+  - name: HTTPD is NOT installed
+    pause:
+      prompt: "HTTPD is NOT installed. Install? (yes/no)"
+    register: confirm_install
+    when: http_installed is failed
+
+  - name:  Install
+    yum:
+      name: httpd
+      state: latest
+    when: (http_installed is failed) and (confirm_install.user_input | bool)
+    
+

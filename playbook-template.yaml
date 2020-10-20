@@ -1,0 +1,36 @@
+---
+- hosts: centos7
+  become: True
+  vars:
+    my_name: 'HaiTrinh'
+    package: httpd
+  tasks:
+  - name: Install httpd
+    yum:
+      name: "{{package}}"
+      state: latest
+
+  - name: Check if HTTPD is installed
+    register: http_installed
+    command: httpd -v
+    ignore_errors: true
+
+  - name: This task is only executed if HTTPD is installed
+    debug: var=http_installed
+    when: http_installed is success
+
+  - name: This task is only executed if HTTPD is NOT installed
+    debug: msg='HTTPD is NOT installed'
+    when: http_installed is failed
+
+  - name: template configuration file
+    template:
+      src: index.html
+      dest: /var/www/html/index.html
+    notify:
+      - restart httpd
+  handlers:
+      - name: restart httpd
+        service:
+          name: httpd
+          state: restarted
