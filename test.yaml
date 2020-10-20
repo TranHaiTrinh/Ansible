@@ -1,19 +1,27 @@
 - hosts: httpd
-  remote_user: root
+  become: True
   tasks:
-  - name: Acquire temporary root password
-    shell: "awk -F': ' '$0 ~ \"temporary password\"{print $2}' /var/log/mysqld.log"
-    register: mysql_root_password_temp
+  # - name: Acquire temporary root password
+  #   shell: "grep password /var/log/mysqld.log | awk '{print $NF}' | head -n1"
+  #   register: mysql_root_password_temp
     
-  - name: Set new root password from default temporary password
-    shell: "mysql -e \"SET PASSWORD = '{{ Abcde@12345 }}';\"
-          --connect-expired-password -uroot -p'{{ mysql_root_password_temp.stdout }}'
-          && touch /root/.my.password.changed"
-    args:
-      creates: /root/.my.password.changed
+  # - name: Set MySQL root Password
+  #   command: mysqladmin -u root -p'{{mysql_root_password_temp.stdout}}' password 'Abcde@12345'
 
-  - name: Removes anonymous user account for localhost
+  - name: Add mysql user
     mysql_user:
-      name: ''
-      host: localhost
-      state: absent
+      name: 'hai'
+      password: 'Abcd12345'
+      state: present
+
+
+  # - name: Create the MySQL haitrinh user
+  #   shell: "mysql -e \"CREATE USER 'haitrinh'@'{{ item }}' IDENTIFIED BY 
+  #         'Abcd@1234'; GRANT ALL PRIVILEGES ON *.* TO 
+  #         'haitrinh'@'{{item}}' WITH GRANT OPTION;\" 
+  #         -uroot -p'Abcde@12345'"
+  #   with_items:
+  #     - ::1
+  #     - 127.0.0.1
+  #     - localhost
+  #     - "%"
