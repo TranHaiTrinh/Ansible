@@ -1,12 +1,28 @@
 ---
-- hosts: httpd
+- hosts: local
   remote_user: root
   tasks:
-  - name: Install LAMP
-    yum:
-      name: ['httpd', 'mysql-server', 'php', 'php-mysql', 'php-fpm']
-      state: present
 
+# ------ Install Packages ------ #
+  - name: Install LAMP Packages
+    command: "{{item}}" 
+    with_items:
+    - yum install httpd -y
+    - yum install php -y
+    - yum install php-mysql -y
+    - yum install php-fpm -y
+    - yum install python-pip -y
+    - pip install cryptography
+    - yum install MySQL-python -y
+    - yum install python2-PyMySQL -y
+
+    - yum install wget -y
+    - sudo wget https://repo.mysql.com//mysql80-community-release-el7-3.noarch.rpm
+    - rpm -ivh mysql80-community-release-el7-3.noarch.rpm
+    - yum install mysql-server -y
+
+
+# ------ Firewalld ------ #
   - name: Ensure service enabled and started
     service:
       name: '{{item}}'
@@ -16,7 +32,7 @@
     - httpd
     - mysqld
 
-  - name: Ensure HTTP and HTTPS can pass the firewall
+  - name: Ensure HTTP, HTTPS and MySQL can pass the firewall
     firewalld:
       service: '{{item}}'
       state: enabled
@@ -26,68 +42,91 @@
     with_items:
     - http
     - https
+    - mysql
 
-
+# ------ Download Wordpress ------ #
   - name: Install php-gd,rsync
     yum:
       name: ['php-gd','rsync']
       state: present
+      
   - name: Restart httpd
     service:
       name: httpd
       state: restarted
+
   - name: Down wordpress
     get_url:
       url: http://wordpress.org/wordpress-5.5.1.tar.gz
       dest: /root
-  - name: extract wordpress
+
+  - name: Extract wordpress
     unarchive:
       src: /root/wordpress-5.5.1.tar.gz
       dest: /root
       remote_src: yes
+
   - name: rsync wordpress
     shell: rsync -avP /root/wordpress/ /var/www/html/
+
   - name: Create folder uploads
     shell: mkdir /var/www/html/wp-content/uploads
+
   - name: Set user:group
     shell: chown -R apache:apache /var/www/html/*
 
 
-# ------ Create Database, user for WordPress ------ #
-  - name: Install MySQL-python
-    yum:
-      name: MySQL-python
-      state: present
+# ------ Create database, user for WordPress ------ #
+  - name: Acquire temporary root password
+    shell: "grep password /var/log/mysqld.log | awk '{print $NF}' | head -n1"
+    register: mysql_root_password_temp
+    
+  - name: Set MySQL root Password
+    command: mysqladmin -u root -p'{{mysql_root_password_temp.stdout}}' password 'Abcde@12345'
+      
+  - name: Create .my.cnf file
+    copy:
+      dest: "/root/.my.cnf"
+      content: |
+        [client]
+        user=root
+        password="Abcde@12345"
+
   - name: Create database wordpress
     mysql_db:
       name: wordpress
       state: present
+
   - name: Create user wordpressuser
     mysql_user:
       name: wordpressuser
       host: localhost
-      password: wordpresspassword
+      password: "WORDpress@@12345"
       priv: 'wordpress.*:ALL'
       state: present
+
 
   # ----- Edit wp-config.php ----- #
   - name: Backup file config wp
     shell: cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+
   - name: Config db name
     replace:
       path: /var/www/html/wp-config.php
       regexp: 'database_name_here'
       replace: 'wordpress'
+
   - name: Config username
     replace:
       path: /var/www/html/wp-config.php
       regexp: 'username_here'
       replace: 'wordpressuser'
+
   - name: Config password
     replace:
       path: /var/www/html/wp-config.php
-      regexp: 'password_here'
-      replace: 'wordpresspassword'
+      regexp: 'wordpresspassword'
+      replace: "WORDpress@@12345"
 
 
 # ------ Update version PHP ------ #
@@ -99,8 +138,10 @@
     - epel-release
     - yum-utils
     - http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+
   - name: Config version PHP
     shell: yum-config-manager --enable remi-php72
+
   - name: Config version PHP
     yum:
       name: '{{item}}'
@@ -114,10 +155,13 @@
     - php-gd
     - php-curl
     - php-mysqlnd
+
   - name: Restart Apache
     service:
       name: httpd
       state: restarted
 
-
-ysf(Jn9RaCyX
+  - name: Restart Mysql
+    service:
+      name: mysqld
+      state: restarted
