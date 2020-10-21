@@ -1,5 +1,0 @@
-httpd ansible_host=35.202.22.102 ansible_port=22 ansible_user=root
-
-
-[mysql]
-mysql-01  ansible_host=35.222.63.8  ansible_port=22  ansible_user=root
