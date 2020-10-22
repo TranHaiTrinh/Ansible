@@ -4,13 +4,3 @@
   tasks:
 
 # ------ Update version PHP ------ #
-  - name: Create user wordpressuser
-    mysql_user:
-      name: wordp
-      host: localhost
-      password: "Wordpress@@123"
-      priv: 'wordpress.*:ALL'
-      state: present
-
-  - name: Acquire temporary root password
-    shell: mysql -uroot -p'Abcde@12345' -e "ALTER USER wordp@localhost IDENTIFIED WITH mysql_native_password BY 'Wordpress@@123';"
