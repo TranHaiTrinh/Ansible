@@ -6,7 +6,6 @@
           -uroot -p'Abcde@12345'"
   # mysql -u root -p'Abcde@12345' -e 'SELECT user FROM mysql.user '
   with_items:
-    - ::1
     - 127.0.0.1
     - localhost
     - "%"
