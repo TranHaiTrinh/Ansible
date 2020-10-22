@@ -1,95 +1,16 @@
+---
 - hosts: mysql-01
   become: True
   tasks:
-  - name: Install LAMP
-    yum:
-      name: ['mysql-server', 'php', 'php-mysql', 'php-fpm']
-      state: present
 
-  - name: Install MySQL-python
-    yum:
-      name: ['MySQL-python','python2-PyMySQL']
-      state: present
-
-  - name: Ensure service enabled and started
-    service:
-      name: mysqld
-      state: started
-      enabled: True
-
-  - name: Ensure HTTP and HTTPS can pass the firewall
-    firewalld:
-      service: mysql
-      state: enabled
-      permanent: True
-      immediate: True
-    become: True
-
-  - name: Acquire temporary root password
-    shell: "grep password /var/log/mysqld.log | awk '{print $NF}' | head -n1"
-    register: mysql_root_password_temp
-    
-  - name: Set MySQL root Password
-    command: mysqladmin -u root -p'{{mysql_root_password_temp.stdout}}' password 'Abcde@12345'
-      
-  - name: Create .my.cnf file
-    copy:
-      dest: "/root/.my.cnf"
-      content: |
-        [client]
-        user=root
-        password="Abcde@12345"
-
-
-  - name: Create database wordpress
-    mysql_db:
-      name: wordpress
-      state: present
-      
+# ------ Update version PHP ------ #
   - name: Create user wordpressuser
     mysql_user:
-      name: wordpressuser
+      name: wordp
       host: localhost
-      password: "WORDpress@@12345"
+      password: "Wordpress@@123"
       priv: 'wordpress.*:ALL'
       state: present
 
-  
-  # - name: Acquire temporary root password
-  #   shell: "grep password /var/log/mysqld.log | awk '{print $NF}' | head -n1"
-  #   register: mysql_root_password_temp
-    
-  # - name: Set MySQL root Password
-  #   command: mysqladmin -u root -p'{{mysql_root_password_temp.stdout}}' password 'Abcde@12345'
-
-  # - name: Add mysql user
-  #   mysql_user:
-  #     name: 'hai'
-  #     password: 'Abcd@@@12345'
-  #     state: present
-
-
-  # - name: Create the MySQL haitrinh user
-  #   shell: "mysql -e \"CREATE USER 'haitrinh'@'{{ item }}' IDENTIFIED BY 
-  #         'Abcd@1234'; GRANT ALL PRIVILEGES ON *.* TO 
-  #         'haitrinh'@'{{item}}' WITH GRANT OPTION;\" 
-  #         -uroot -p'Abcde@12345'"
-  #   with_items:
-  #     - ::1
-  #     - 127.0.0.1
-  #     - localhost
-  #     - "%"
-
-  # - name: Removes anonymous user account for localhost
-  #   mysql_user:
-  #     name: ''
-  #     host: localhost
-  #     state: absent
-
-  # - name: Removes all anonymous user accounts
-  #   mysql_user:
-  #     name: ''
-  #     host_all: yes
-  #     state: absent
-
-  
+  - name: Acquire temporary root password
+    shell: mysql -uroot -p'Abcde@12345' -e "ALTER USER wordp@localhost IDENTIFIED WITH mysql_native_password BY 'Wordpress@@123';"

@@ -1,5 +1,5 @@
 ---
-- hosts: local
+- hosts: mysql-01
   remote_user: root
   tasks:
 
@@ -101,10 +101,12 @@
     mysql_user:
       name: wordpressuser
       host: localhost
-      password: "WORDpress@@12345"
+      password: "Wordpress@@123"
       priv: 'wordpress.*:ALL'
       state: present
 
+  - name: Change authentication plugins default on mysql 8.0
+    shell: mysql -uroot -p'Abcde@12345' -e "ALTER USER wordpressuser@localhost IDENTIFIED WITH mysql_native_password BY 'Wordpress@@123';"
 
   # ----- Edit wp-config.php ----- #
   - name: Backup file config wp
@@ -125,8 +127,8 @@
   - name: Config password
     replace:
       path: /var/www/html/wp-config.php
-      regexp: 'wordpresspassword'
-      replace: "WORDpress@@12345"
+      regexp: 'password_here'
+      replace: "Wordpress@@123"
 
 
 # ------ Update version PHP ------ #
@@ -159,9 +161,4 @@
   - name: Restart Apache
     service:
       name: httpd
-      state: restarted
-
-  - name: Restart Mysql
-    service:
-      name: mysqld
       state: restarted
